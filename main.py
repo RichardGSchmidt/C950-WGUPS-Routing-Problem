@@ -10,7 +10,7 @@ from genetic_algorithm import genetic_algorithm, simulate_delivery
 from fileops import load_data
 
 
-matrices, addresses, packages, restrictions = load_data()
+matrices, addresses, packages = load_data()
 
 HUB = 0
 
@@ -18,7 +18,10 @@ HUB = 0
 def str_all_packages(package_hashmap):
     keys = package_hashmap.keys()
 
+    #get package header
     return_string = f'\n{get_header()}\n'
+
+    #add all package printouts after the header string
     for ki in keys:
         return_string = return_string + f'{package_hashmap.get(ki)}\n'
     return return_string
@@ -36,6 +39,7 @@ def get_truck_status(trucks, truck_index, query_time, package_hashmap, address_m
     str_out = ''
     #must be by value otherwise this breaks
     tmp_packs_left = list(truck.packages)
+    #divide keys up into what's delivered and what's left based on query time.
     for key in truck.packages:
         if package_hashmap.get(key).time_delivered <= query_time:
             tmp_packs_delivered.append(key)
@@ -52,7 +56,7 @@ def get_truck_status(trucks, truck_index, query_time, package_hashmap, address_m
         str_out = f'\nTruck {truck_index +1} for {query_time}-\tDriving to Package {tmp_packs_left[0]} \tPackages Delivered: {tmp_packs_delivered}\tPackages left: {tmp_packs_left}'
     #in the event the route is complete
     elif len(tmp_packs_left) == 0:
-        #logic splits as only truck 1 (at index 0) returns to the hub in accordance with the requirements
+        #logic splits as only truck 1 (at index 0) returns to the hub in accordance with the requirements.
         if truck_index == 1 or truck_index == 2:
             address_string = f"{address_map[tmp_packs_delivered[-1]][1]}"
             str_out = f'\nTruck {truck_index + 1} for {query_time}-\tParked at {address_string}\tPackages Delivered: {tmp_packs_delivered}'
@@ -63,7 +67,7 @@ def get_truck_status(trucks, truck_index, query_time, package_hashmap, address_m
                 str_out = f'\nTruck {truck_index +1} for {query_time}-\tAt Hub - Deliveries completed\tPackages Delivered: {tmp_packs_delivered}'
     return str_out
 
-
+#Method that cycles through all trucks and gets status text
 def get_all_trucks_status(trucks, query_time, package_hashmap, address_map):
     string_out = ''
     for t in range(len(trucks)):
@@ -71,6 +75,7 @@ def get_all_trucks_status(trucks, query_time, package_hashmap, address_map):
     return string_out
 
 
+#Vehicles to be tested in the algorithm
 wgups1 = vehicle.Vehicle(16,18,None,[1,13,14,15,16,19,20,21,27,29,30,34,35,37,39,40],0.0, HUB, datetime.timedelta(hours=8))
 wgups2 = vehicle.Vehicle(16,18,None,[3,6,7,11,12,18,22,23,24,25,26,31,32,36,38],0.0, HUB, datetime.timedelta(hours=9, minutes= 5))
 wgups3 = vehicle.Vehicle(16,18,None,[2,4,5,8,9,10,17,28,33],0.0, HUB, datetime.timedelta(hours=10, minutes= 20))
@@ -99,14 +104,19 @@ print(f'optimized packages:{str_all_packages(optimized_packages)}')
 print(f'total milage: {total_mileage:.1f}, wgups1 = {optimized_trucks[0].mileage:.1f}, wgups2 = {optimized_trucks[1].mileage:.1f}, wgups3 = {optimized_trucks[2].mileage:.1f}')
 
 
-
+#Interactive UI Segment
 package_string = 'All'
-
+#control loop
 while package_string.lower() != "q" and package_string.lower() != "quit":
+    #Try / except blocks along with the raise value error are used to scan for bad user inputs and to exit the program
+    #in the event bad inputs are passed to the program
     try:
         package_string = input('Please select a package number, enter A for all packages, or Q to quit:')
+        #requesting to quit breaks to the loop immediately, where the loop is exited.
         if package_string.lower() == "q" or package_string.lower() == "quit":
             break
+        #if a printout of all packages is requested, the method for displaying all packages is called for the target
+        #time
         if package_string.lower() == "a" or package_string.lower() == "all" or package_string.lower() == "al":
             time_string = input('Please enter a Time group in the following format (HH:MM:SS) with leading zeroes:')
             go_time = datetime.timedelta(hours=int(time_string[0:2]), minutes=int(time_string[3:5]), seconds=int(time_string[6:8]))
@@ -115,6 +125,7 @@ while package_string.lower() != "q" and package_string.lower() != "quit":
             print(str_all_packages(optimized_packages))
             tmp_string = get_all_trucks_status(optimized_trucks, go_time, optimized_packages, addresses)
             print(tmp_string)
+        #if a printout of a specific package is requested, the display method for the individual package is used instead.
         elif int(package_string) in optimized_packages.keys():
             time_string = input('Please enter a Time group in the following format (HH:MM:SS) with leading zeroes:')
             go_time = datetime.timedelta(hours=int(time_string[0:2]), minutes=int(time_string[3:5]), seconds=int(time_string[6:8]))
@@ -122,13 +133,13 @@ while package_string.lower() != "q" and package_string.lower() != "quit":
             print(f'Packages {package_string} for time {go_time}\n{get_header()}\n{optimized_packages.get(int(package_string))}')
             tmp_string = get_all_trucks_status(optimized_trucks, go_time, optimized_packages, addresses)
             print(tmp_string)
+        #if the first input doesn't match any of the designated inputs, raise and exception to close the program
         else:
             raise ValueError('Invalid input. CLosing the program')
     except ValueError:
         print('Invalid input. Closing the program.')
         exit(1)
-
-
+#goodbye text once the loop is exited and the program has closed normally.
 print(f"Exiting program, have a nice day!")
 
 

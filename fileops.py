@@ -5,6 +5,7 @@
 import datetime
 from hashchain import HashChain
 from package import Package
+import csv
 
 def load_distances():
     # Load distances from csv file as a symmetrical distance map
@@ -65,17 +66,8 @@ def load_packages():
             packages.insert(int(item[0]), pkg)
         return packages
 
-# Load data
+# Load data calls all the load functions at once.
 def load_data():
     addresses = load_addresses()
     packages = load_packages()
-    restrictions = get_restrictions()
-    return get_matrices(), addresses, packages, restrictions
-
-#returns a tuple of both constraints and package groups
-def get_restrictions():
-    #constraints means that package[value 0] must be on truck[value 1]
-    constraints = [[3,2],[18,2],[36,2],[38,2]]
-    #groups must be delivered together
-    groups = [[13,14,15,16,19,20]]
-    return constraints, groups
+    return get_matrices(), addresses, packages

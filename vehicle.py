@@ -2,15 +2,6 @@
 #C950 Data Structures and Algorithms II
 #NHP3 — NHP3 Task 2: WGUPS Routing Program Implementation
 
-import datetime
-
-def get_time_matrix(distance_matrix, speed):
-    time_matrix = [
-        [datetime.timedelta(hours=val / speed) for val in row]
-        for row in distance_matrix
-    ]
-    return time_matrix
-
 class Vehicle:
     def __init__(self, capacity, speed, load, packages, mileage, address, departure_time):
         self.capacity = capacity
