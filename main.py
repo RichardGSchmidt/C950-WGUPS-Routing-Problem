@@ -1,5 +1,6 @@
-#Author: Richard Schmidt ID:010869529
-# #C950 WGUPS Routing Program
+#Name: Richard Schmidt, Student_ID: ID:010869529
+#C950 Data Structures and Algorithms II
+#NHP3 — NHP3 Task 2: WGUPS Routing Program Implementation
 
 #Initialization section
 import vehicle
@@ -41,7 +42,7 @@ def get_truck_status(trucks, truck_index, query_time, package_hashmap, address_m
             tmp_packs_left.remove(key)
     #if the truck hasn't left yet
     if truck.depart_time > query_time:
-        str_out = f'\nTruck {truck_index + 1} for {query_time}-\tAwaiting Departure\nPackages to be Delivered: {tmp_packs_left}'
+        str_out = f'\nTruck {truck_index + 1} for {query_time}-\tAwaiting Departure\tPackages to be Delivered: {tmp_packs_left}'
     #in the event the truck has left the hub but hasn't reached the first package
     elif len(tmp_packs_delivered) == 0:
         str_out = f'\nTruck {truck_index +1} for {query_time}-\tDeparted Hub for package {tmp_packs_left[0]}\tPackages to be Delivered: {tmp_packs_left}'

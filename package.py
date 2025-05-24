@@ -1,4 +1,7 @@
-#Package Class
+#Name: Richard Schmidt, Student_ID: ID:010869529
+#C950 Data Structures and Algorithms II
+#NHP3 — NHP3 Task 2: WGUPS Routing Program Implementation
+
 import datetime
 import csv
 
@@ -43,7 +46,6 @@ class Package:
             self.time_due = datetime.timedelta(hours=23, minutes=59, seconds=59)
         else:
             #using python stripping here for easy inputs from the csv
-            #print(f'{time_due} is {time_due[0:2]},{time_due[3:5]} ,{time_due[8:10]} ')
             self.time_due = datetime.timedelta(hours = int (time_due[0:2]), minutes = int(time_due[3:5]), seconds = int(0))
 
         self.weight = weight
@@ -61,7 +63,7 @@ class Package:
         self.truck_restriction = truck_restriction
 
 
-    #  returns a string displaying requirements in task FIXME~~~!!!!
+    #  returns a string displaying desired info for the user
     def __str__(self):
         id_text = str(self.id)
         with open("./data/addresses.csv", 'r') as myFile:

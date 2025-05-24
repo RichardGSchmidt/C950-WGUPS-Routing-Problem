@@ -1,9 +1,9 @@
+#Name: Richard Schmidt, Student_ID: ID:010869529
 #C950 Data Structures and Algorithms II
 #NHP3 — NHP3 Task 2: WGUPS Routing Program Implementation
-#Name: Richard Schmidt
-#Student_ID: ID:010869529
 
-#Task A (in conjunction with package.py
+
+#Task A (in conjunction with package.py)
 class HashChain:
     def __init__(self, capacity=8):
         self.capacity = capacity

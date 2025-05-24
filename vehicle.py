@@ -1,3 +1,7 @@
+#Name: Richard Schmidt, Student_ID: ID:010869529
+#C950 Data Structures and Algorithms II
+#NHP3 — NHP3 Task 2: WGUPS Routing Program Implementation
+
 import datetime
 
 def get_time_matrix(distance_matrix, speed):

@@ -1,4 +1,7 @@
-import csv
+#Name: Richard Schmidt, Student_ID: ID:010869529
+#C950 Data Structures and Algorithms II
+#NHP3 — NHP3 Task 2: WGUPS Routing Program Implementation
+
 import datetime
 from hashchain import HashChain
 from package import Package
@@ -39,7 +42,7 @@ def load_addresses():
         addresses = list(csv.reader(myFile))
         return addresses
 
-#loads packages into the hashchain class.
+#loads packages into the hashchain class in order to accomplish Task A
 def load_packages():
     # Load packages
     packages = HashChain()
