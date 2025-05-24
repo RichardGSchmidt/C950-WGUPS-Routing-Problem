@@ -4,7 +4,7 @@ from hashchain import HashChain
 from package import Package
 
 def load_distances():
-    # Load distances
+    # Load distances from csv file as a symmetrical distance map
     with open("./data/distances.csv", 'r') as myFile:
         tmp = list(csv.reader(myFile))
         d_matrix = []
@@ -18,7 +18,7 @@ def load_distances():
             d_matrix.append(row_values)
     return d_matrix
 
-#Pregenerate a time matrix so all this slow math only needs to be calculated once
+#Pregenerate a time matrix so slow math (division) only needs to be calculated once
 def get_time_matrix(d_matrix, speed):
     time_matrix = [
         [datetime.timedelta(hours=val / speed) for val in row]
@@ -26,17 +26,20 @@ def get_time_matrix(d_matrix, speed):
     ]
     return time_matrix
 
+#get both distance and time matrix as a tuple
 def get_matrices():
     d_matrix = load_distances()
     t_matrix = get_time_matrix(d_matrix, 18)
     return d_matrix, t_matrix
 
+#load address string names from file, used to translate indexes back to text during outputs
 def load_addresses():
     # Load addresses
     with open("./data/addresses.csv", 'r') as myFile:
         addresses = list(csv.reader(myFile))
         return addresses
 
+#loads packages into the hashchain class.
 def load_packages():
     # Load packages
     packages = HashChain()
@@ -44,10 +47,6 @@ def load_packages():
         items = list(csv.reader(myFile))
         for item in items:
             # Create package object
-            # def __init__(self, package_id, address,           city,         zipcode,  time_due,       weight,                                  status,                time_available=datetime.timedelta(hours=8),  truck_restriction=0):
-            #                                0        1                   2              3          4    vs       5                                         6                                                7                       8
-            #                        6,   3060 Lester St,   West Valley City,  84119,   10:30:00,     88 Kilos,     'Delayed on flight---will not arrive to depot until     9:05 am',              09:05, (a number here if restricted to a truck)
-
             pkg = Package(
                 int(item[0]),  # package id
                 item[1],  # address
@@ -59,7 +58,7 @@ def load_packages():
                 item[7],  # TimeAvailable
                 item[8])  # truck restrictions
             # item = Package(0,1,2,3,4,5,6,7,8)
-            # Insert into hash chain
+            # Insert into hash chain in accordance with ta
             packages.insert(int(item[0]), pkg)
         return packages
 

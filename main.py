@@ -13,8 +13,7 @@ matrices, addresses, packages, restrictions = load_data()
 
 HUB = 0
 
-#print(f'distances : {distance_matrix},\n addresses : {addresses},\npackages : {packages}')
-
+#function to get a string output off all packages status and details
 def str_all_packages(package_hashmap):
     keys = package_hashmap.keys()
 
@@ -23,10 +22,52 @@ def str_all_packages(package_hashmap):
         return_string = return_string + f'{package_hashmap.get(ki)}\n'
     return return_string
 
+#function to update the status of all packages for a given time
 def update_all_packages(query_time,package_hashmap):
-    keys = package_hashmap.keys()
-    for ki in keys:
-        package_hashmap.get(ki).update(query_time)
+    for ki in package_hashmap.keys():
+        pack = package_hashmap.get(ki)
+        pack.update(query_time)
+
+#function that returns a string to display truck status for a given route
+def get_truck_status(trucks, truck_index, query_time, package_hashmap, address_map):
+    truck = trucks[truck_index]
+    tmp_packs_delivered = []
+    str_out = ''
+    #must be by value otherwise this breaks
+    tmp_packs_left = list(truck.packages)
+    for key in truck.packages:
+        if package_hashmap.get(key).time_delivered <= query_time:
+            tmp_packs_delivered.append(key)
+            tmp_packs_left.remove(key)
+    #if the truck hasn't left yet
+    if truck.depart_time > query_time:
+        str_out = f'\nTruck {truck_index + 1} for {query_time}-\tAwaiting Departure\nPackages to be Delivered: {tmp_packs_left}'
+    #in the event the truck has left the hub but hasn't reached the first package
+    elif len(tmp_packs_delivered) == 0:
+        str_out = f'\nTruck {truck_index +1} for {query_time}-\tDeparted Hub for package {tmp_packs_left[0]}\tPackages to be Delivered: {tmp_packs_left}'
+    #in the event the vehicle is between two delivery points
+    elif len(tmp_packs_left) > 0 and len(tmp_packs_delivered) > 0:
+
+        str_out = f'\nTruck {truck_index +1} for {query_time}-\tDriving to Package {tmp_packs_left[0]} \tPackages Delivered: {tmp_packs_delivered}\tPackages left: {tmp_packs_left}'
+    #in the event the route is complete
+    elif len(tmp_packs_left) == 0:
+        #logic splits as only truck 1 (at index 0) returns to the hub in accordance with the requirements
+        if truck_index == 1 or truck_index == 2:
+            address_string = f"{address_map[tmp_packs_delivered[-1]][1]}"
+            str_out = f'\nTruck {truck_index + 1} for {query_time}-\tParked at {address_string}\tPackages Delivered: {tmp_packs_delivered}'
+        else:
+            if query_time < truck.time:
+                str_out = f'\nTruck {truck_index +1} for {query_time}-\tIn Route to Hub\tPackages Delivered: {tmp_packs_delivered}'
+            else:
+                str_out = f'\nTruck {truck_index +1} for {query_time}-\tAt Hub - Deliveries completed\tPackages Delivered: {tmp_packs_delivered}'
+    return str_out
+
+
+def get_all_trucks_status(trucks, query_time, package_hashmap, address_map):
+    string_out = ''
+    for t in range(len(trucks)):
+        string_out += get_truck_status(trucks, t, query_time, package_hashmap, address_map)
+    return string_out
 
 
 wgups1 = vehicle.Vehicle(16,18,None,[1,13,14,15,16,19,20,21,27,29,30,34,35,37,39,40],0.0, HUB, datetime.timedelta(hours=8))
@@ -39,8 +80,8 @@ best_solution, best_distance = genetic_algorithm(
     [wgups1, wgups2, wgups3],
     packages,
     matrices,
-    pop_size=5000,
-    generations=250,
+    pop_size=4000,
+    generations=32,
     crossover_rate=0.9,
     mutation_rate= 0.05
 )
@@ -48,15 +89,46 @@ best_solution, best_distance = genetic_algorithm(
 # Simulate delivery with the optimized solution
 optimized_trucks, total_mileage, optimized_packages = simulate_delivery(best_solution, [wgups1,wgups2,wgups3], packages, matrices)
 
-print(f"\nbest solution: {best_solution}")
+print(f"\nbest solution:\nTruck 1: {best_solution[0]}\nTruck 2: {best_solution[1]}\nTruck 3: {best_solution[2]}")
 print(f"best distance: {float(best_distance):.1f} miles")
-go_time = datetime.timedelta(hours=20)
-#update_all_packages(go_time,packages)
-for key in optimized_packages.keys():
-    tmp_pack = optimized_packages.get(key)
-    tmp_pack.update(go_time)
+go_time = datetime.timedelta(hours=23, minutes=59)
+update_all_packages(go_time,optimized_packages)
 print(f'optimized packages:{str_all_packages(optimized_packages)}')
-
+#print(f'For time: {go_time}')
 print(f'total milage: {total_mileage:.1f}, wgups1 = {optimized_trucks[0].mileage:.1f}, wgups2 = {optimized_trucks[1].mileage:.1f}, wgups3 = {optimized_trucks[2].mileage:.1f}')
+
+
+
+package_string = 'All'
+
+while package_string.lower() != "q" and package_string.lower() != "quit":
+    try:
+        package_string = input('Please select a package number, enter A for all packages, or Q to quit:')
+        if package_string.lower() == "q" or package_string.lower() == "quit":
+            break
+        if package_string.lower() == "a" or package_string.lower() == "all" or package_string.lower() == "al":
+            time_string = input('Please enter a Time group in the following format (HH:MM:SS) with leading zeroes:')
+            go_time = datetime.timedelta(hours=int(time_string[0:2]), minutes=int(time_string[3:5]), seconds=int(time_string[6:8]))
+            update_all_packages(go_time, optimized_packages)
+            print(f'\nDisplaying all packages for time {go_time}')
+            print(str_all_packages(optimized_packages))
+            tmp_string = get_all_trucks_status(optimized_trucks, go_time, optimized_packages, addresses)
+            print(tmp_string)
+        elif int(package_string) in optimized_packages.keys():
+            time_string = input('Please enter a Time group in the following format (HH:MM:SS) with leading zeroes:')
+            go_time = datetime.timedelta(hours=int(time_string[0:2]), minutes=int(time_string[3:5]), seconds=int(time_string[6:8]))
+            update_all_packages(go_time, optimized_packages)
+            print(f'Packages {package_string} for time {go_time}\n{get_header()}\n{optimized_packages.get(int(package_string))}')
+            tmp_string = get_all_trucks_status(optimized_trucks, go_time, optimized_packages, addresses)
+            print(tmp_string)
+        else:
+            raise ValueError('Invalid input. CLosing the program')
+    except ValueError:
+        print('Invalid input. Closing the program.')
+        exit(1)
+
+
+print(f"Exiting program, have a nice day!")
+
 
 

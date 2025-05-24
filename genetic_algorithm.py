@@ -1,22 +1,10 @@
 # Genetic Algorithm for Vehicle Routing Optimization
 import random
-import copy
-import datetime
-import csv
-
-from samba.graph import distance_matrix
-
 from vehicle import Vehicle
-from package import Package
-from hashchain import HashChain
-
-#using a fixed seed so that results are reproducible
 random.seed("WGUPS")
 
 
-# Helper functions for distance calculation
-
-
+# Helper functions for distance calculation and to see if everything will be on time
 # Function to calculate route distance
 def calculate_route_distance(route, matrices, packages, start_time, hub=0):
     if not route:
@@ -42,12 +30,15 @@ def calculate_route_distance(route, matrices, packages, start_time, hub=0):
 
 
     #return to hub
-    total_distance += d_matrix[current_address][hub]
+    #This is skipped in the fitness evaluation in order to speed computation rate as it has minimal effect
+    #on overall fitness
+    #total_distance += d_matrix[current_address][hub]
     
     return total_distance, ontime
 
 
 # Initial population with constraints
+# Constant time operation O(p) where p is population size (a constant)
 def create_initial_population(pop_size, trucks):
     population = []
     # Create the initial population
@@ -55,12 +46,10 @@ def create_initial_population(pop_size, trucks):
         # Create a new solution
         solution = []
         
-        # Clone the package assignments in a way that copies all internal files
-        # recursively instead of just having references inside of them.  Deep Copy is also
-        # called hard copy and the (normal) copy.copy() function is referred to as soft copy.
-        tmp1_pkgs = copy.deepcopy(trucks[0].packages)
-        tmp2_pkgs = copy.deepcopy(trucks[1].packages)
-        tmp3_pkgs = copy.deepcopy(trucks[2].packages)
+        # Copy package lists by value
+        tmp1_pkgs = list(trucks[0].packages)
+        tmp2_pkgs = list(trucks[1].packages)
+        tmp3_pkgs = list(trucks[2].packages)
         
         # Shuffle each truck's route
         random.shuffle(tmp1_pkgs)
@@ -80,7 +69,7 @@ def create_initial_population(pop_size, trucks):
 # Evaluate fitness of the population
 def evaluate_fitness(population, my_packages, matrices, trucks):
     fitness_scores = []
-    
+
     for solution in population:
         total_distance = 0
         solution_ontime = True
@@ -107,16 +96,16 @@ def evaluate_fitness(population, my_packages, matrices, trucks):
 def selection(population_fitness, num_parents):
     # Tournament selection
     selected_parents = []
-    
+
     for _ in range(num_parents):
         # Select random competitors
         tournament_size = min(5, len(population_fitness))
         competitors = random.sample(population_fitness, tournament_size)
-        
-        # Select the best
+
+        # Select the best competitor and add them to the selected parents
         best = max(competitors, key=lambda x: x[1])
         selected_parents.append(best[0])
-    
+
     return selected_parents
 
 # Crossover function
@@ -164,12 +153,10 @@ def mutation(offspring, mutation_rate):
     
     for solution in offspring:
         if random.random() < mutation_rate:
-            # Making a deep copy to avoid modifying the original, failing to do this was the cause of a bug that
+            # Making a copy by value, failing to do this was the cause of a bug that
             # I missed early on which caused the mutated offspring to alter their parent solution during data
-            # manipulation. Deepcopy copies recursively everything inside of objects, where standard copy or assignment
-            # will simply create an object with reference points to objects.  Deepcopy creates separate objects with new
-            # references.
-            mutated_solution = copy.deepcopy(solution)
+            # manipulation.
+            mutated_solution = [list(route)for route in solution]
 
             # Choose a random truck route to mutate
             truck_idx = random.randint(0, len(mutated_solution) - 1)
@@ -184,7 +171,7 @@ def mutation(offspring, mutation_rate):
             mutated_offspring.append(mutated_solution)
         else:
             # No mutation append a copy of the solution
-            mutated_offspring.append(copy.deepcopy(solution))
+            mutated_offspring.append([list(route)for route in solution])
     
     return mutated_offspring
 
@@ -209,7 +196,7 @@ def genetic_algorithm(trucks, packages, matrices, pop_size=50, generations=100, 
             best_distance = current_best[2]
             # this print statement uses \r and an end="" to keep updating the text in place.
             # in Python.
-            print(f"\rGeneration {generation}: New best distance = {best_distance:.1f} miles.", end="")
+            print(f"\rGeneration {generation}: New best distance = {best_distance:.1f} miles (not including return leg).", end="")
         
         # Select parents based on fitness score for the population, reproductive success rate (which is really it's
         # inverse here) determines how many parents are selected from the total population.
@@ -222,10 +209,13 @@ def genetic_algorithm(trucks, packages, matrices, pop_size=50, generations=100, 
         # Mutation
         offspring = mutation(offspring, mutation_rate)
         
-        # Create new population with elitism (keep the best solution)
-        population = [population_fitness[0][0]]  # Keep best solution
-        population.extend(offspring[:(pop_size - 1)])  # Fill with offspring
-    
+        # Create new population with elitism (keep the best (pop_size / survival_rate) solution)
+        survival_rate = 20
+        elite_count = max(1,pop_size//survival_rate)
+        elites = [e[0] for e in population_fitness[:elite_count]]
+        population = elites + offspring[:(pop_size-elite_count)]
+
+
     return best_solution, best_distance
 
 # Function to simulate delivery with the optimized routes
@@ -234,45 +224,51 @@ def simulate_delivery(solution, trucks, packages, matrices):
     d_matrix, t_matrix = matrices
 
     # Clone the trucks
-    truck_clones = copy.deepcopy(trucks)
+    truck_clones = [Vehicle(t.capacity,t.speed,t.load,t.packages, t.mileage, t.address, t.depart_time) for t in trucks]
 
     #reset mileage
     for truck in truck_clones:
         truck.mileage = 0.0
-
 
     # Update each truck's package list with the optimized route
     for i, route in enumerate(solution):
         truck_clones[i].packages = route
    #     print(f'precheck test for travel time on truck {calculate_route_distance(route,distances,addresses,packages,hub_address)} for route {route}')
 
+    # find the best truck to return
+
     # Simulate the delivery for each truck
-    for truck in truck_clones:
+    for t in range(len(truck_clones)):
         current_address = hub_address
-        current_time = truck.depart_time
+        current_time = truck_clones[t].depart_time
 
 
         # Process each package in the route
-        for package_id in truck.packages:
+        for package_id in truck_clones[t].packages:
             package = packages.get(package_id)
             next_address = package.address
             distance = d_matrix[current_address][next_address]
             travel_time = t_matrix[current_address][next_address]
 
             #update truck position and time
-            truck.mileage += distance
+            truck_clones[t].mileage += distance
             current_time += travel_time
 
             #Update Package Status
-            package.time_departed = truck.depart_time
+            package.time_departed = truck_clones[t].depart_time
             package.time_delivered = current_time
             package.update(current_time)
 
             current_address = next_address
 
-        #return to hub
-        truck.mileage += d_matrix[current_address][0]
-        current_time += t_matrix[current_address][0]
+        # Send vehicle 1 to the hub to pick up vehicle 3.
+        # upon further inspection of the requirements, this isn't needed, day ends at 40 packages delivered, trucks
+        # CAN return to depot, but it is not actually a stated requirement.
+        if t == 0:
+            truck_clones[t].mileage += d_matrix[current_address][0]
+            current_time += t_matrix[current_address][0]
+            truck_clones[2].depart_time = max(current_time, truck_clones[2].depart_time)
+            print(f'\nTruck {t+1} is selected to return to hub to retrieve Vehicle 3, returned at time {current_time}')
 
     
     # Calculate total mileage

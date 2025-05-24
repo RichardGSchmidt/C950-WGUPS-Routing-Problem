@@ -1,7 +1,7 @@
 #Package Class
 import datetime
 import csv
-import hashchain
+
 
 #UI Methods I wrote.  They look ugly in here but nice on screen.
 def format_package_text(id_text, address_text, city_text, zip_text, weight_text, status_text, time_departed_text, time_due_text, time_delivered_text, time_available_text):
@@ -30,7 +30,7 @@ def format_package_text(id_text, address_text, city_text, zip_text, weight_text,
 def get_header():
     return format_package_text("Id","Address", "City", "Zip", "Mass", "Status", "Departure", "Due", "Delivered", "Available")
 
-
+#(Task A and Task B)  This class allows for the easy implementation of packages inside the hashchain class
 class Package:
     def __init__(self, package_id, address, city, zipcode, time_due, weight, note, time_available="08:00", truck_restriction=0):
         self.id = package_id
@@ -93,7 +93,7 @@ class Package:
                 self.status = "Delivered"
             else:
                 self.status = "LATE-Delivered"
-        elif self.time_departed > request_time:
+        elif self.time_departed < request_time:
             self.status = "Out for Delivery"
         else:
             self.status = "At Hub"

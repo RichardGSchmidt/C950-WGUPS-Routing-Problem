@@ -1,3 +1,9 @@
+#C950 Data Structures and Algorithms II
+#NHP3 — NHP3 Task 2: WGUPS Routing Program Implementation
+#Name: Richard Schmidt
+#Student_ID: ID:010869529
+
+#Task A (in conjunction with package.py
 class HashChain:
     def __init__(self, capacity=8):
         self.capacity = capacity
@@ -42,7 +48,11 @@ class HashChain:
         print(f'Key: {key} not found, removal has failed')
         return -1
 
-    # Method to get a key
+    # Method to get an object based on key (Task B)
+    # since this is used to implement a package object it
+    # returns a package object as detailed in package.py
+    # which include the following attributes:
+    #                   delivery address, due_time, city, zipcode, package weight, and delivery status
     def get(self, key):
         index = self.hash(key)
         for entry in self.buckets[index]:
