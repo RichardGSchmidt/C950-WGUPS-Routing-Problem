@@ -44,34 +44,41 @@ def get_truck_status(trucks, truck_index, query_time, package_hashmap, address_m
         if package_hashmap.get(key).time_delivered <= query_time:
             tmp_packs_delivered.append(key)
             tmp_packs_left.remove(key)
+    truck_distance = 0
     #if the truck hasn't left yet
     if truck.depart_time > query_time:
-        str_out = f'\nTruck {truck_index + 1} for {query_time}-\tAwaiting Departure\tPackages to be Delivered: {tmp_packs_left}'
+        str_out = f'Truck {truck_index + 1} for {query_time}-\tAwaiting Departure\t\tRemaining: {tmp_packs_left} Mileage = {truck_distance:.1f}\n'
     #in the event the truck has left the hub but hasn't reached the first package
     elif len(tmp_packs_delivered) == 0:
-        str_out = f'\nTruck {truck_index +1} for {query_time}-\tDeparted Hub for package {tmp_packs_left[0]}\tPackages to be Delivered: {tmp_packs_left}'
+        truck_distance = truck.speed * (query_time - truck.depart_time).total_seconds() / 3600
+        str_out = f'Truck {truck_index +1} for {query_time}-\tDelivering Package {tmp_packs_left[0]}\tRemaining: {tmp_packs_left} Mileage = {truck_distance:.1f}\n'
     #in the event the vehicle is between two delivery points
     elif len(tmp_packs_left) > 0 and len(tmp_packs_delivered) > 0:
-
-        str_out = f'\nTruck {truck_index +1} for {query_time}-\tDriving to Package {tmp_packs_left[0]} \tPackages Delivered: {tmp_packs_delivered}\tPackages left: {tmp_packs_left}'
+        truck_distance = truck.speed * (query_time - truck.depart_time).total_seconds() / 3600
+        str_out = f'Truck {truck_index +1} for {query_time}-\tDelivering Package {tmp_packs_left[0]}\tDelivered: {tmp_packs_delivered}\tRemaining: {tmp_packs_left} Mileage = {truck_distance:.1f}\n'
     #in the event the route is complete
     elif len(tmp_packs_left) == 0:
+        truck_distance = truck.mileage
         #logic splits as only truck 1 (at index 0) returns to the hub in accordance with the requirements.
         if truck_index == 1 or truck_index == 2:
             address_string = f"{address_map[tmp_packs_delivered[-1]][1]}"
-            str_out = f'\nTruck {truck_index + 1} for {query_time}-\tParked at {address_string}\tPackages Delivered: {tmp_packs_delivered}'
+            str_out = f'Truck {truck_index + 1} for {query_time}-\tParked at {address_string}\tDelivered: {tmp_packs_delivered} Mileage = {truck.mileage:.1f}\n'
         else:
             if query_time < truck.time:
-                str_out = f'\nTruck {truck_index +1} for {query_time}-\tIn Route to Hub\tPackages Delivered: {tmp_packs_delivered}'
+                str_out = f'Truck {truck_index +1} for {query_time}-\tIn Route to Hub\t\tDelivered: {tmp_packs_delivered} Mileage = {truck.mileage:.1f}\n'
             else:
-                str_out = f'\nTruck {truck_index +1} for {query_time}-\tAt Hub - Deliveries completed\tPackages Delivered: {tmp_packs_delivered}'
-    return str_out
+                str_out = f'Truck {truck_index +1} for {query_time}-\tAt Hub - Done\tDelivered: {tmp_packs_delivered} Mileage = {truck.mileage:.1f}\n'
+    return str_out, truck_distance
 
 #Method that cycles through all trucks and gets status text
 def get_all_trucks_status(trucks, query_time, package_hashmap, address_map):
     string_out = ''
+    total_miles = 0
     for t in range(len(trucks)):
-        string_out += get_truck_status(trucks, t, query_time, package_hashmap, address_map)
+        tmp_str_out, tmp_distance = get_truck_status(trucks, t, query_time, package_hashmap, address_map)
+        string_out += tmp_str_out
+        total_miles += tmp_distance
+    string_out += f'Total Miles for all trucks: {total_miles:.1f}\n'
     return string_out
 
 
@@ -96,12 +103,11 @@ best_solution, best_distance = genetic_algorithm(
 optimized_trucks, total_mileage, optimized_packages = simulate_delivery(best_solution, [wgups1,wgups2,wgups3], packages, matrices)
 
 print(f"\nbest solution:\nTruck 1: {best_solution[0]}\nTruck 2: {best_solution[1]}\nTruck 3: {best_solution[2]}")
-print(f"best distance: {float(best_distance):.1f} miles")
+
 go_time = datetime.timedelta(hours=23, minutes=59)
 update_all_packages(go_time,optimized_packages)
 print(f'optimized packages:{str_all_packages(optimized_packages)}')
-#print(f'For time: {go_time}')
-print(f'total milage: {total_mileage:.1f}, wgups1 = {optimized_trucks[0].mileage:.1f}, wgups2 = {optimized_trucks[1].mileage:.1f}, wgups3 = {optimized_trucks[2].mileage:.1f}')
+print(f'total milage: {total_mileage:.1f}, Truck1 = {optimized_trucks[0].mileage:.1f}, Truck2 = {optimized_trucks[1].mileage:.1f}, Truck3 = {optimized_trucks[2].mileage:.1f}')
 
 
 #Interactive UI Segment
@@ -122,7 +128,9 @@ while package_string.lower() != "q" and package_string.lower() != "quit":
             go_time = datetime.timedelta(hours=int(time_string[0:2]), minutes=int(time_string[3:5]), seconds=int(time_string[6:8]))
             update_all_packages(go_time, optimized_packages)
             print(f'\nDisplaying all packages for time {go_time}')
+            #print out all packages
             print(str_all_packages(optimized_packages))
+            #print out truck status
             tmp_string = get_all_trucks_status(optimized_trucks, go_time, optimized_packages, addresses)
             print(tmp_string)
         #if a printout of a specific package is requested, the display method for the individual package is used instead.
@@ -130,7 +138,9 @@ while package_string.lower() != "q" and package_string.lower() != "quit":
             time_string = input('Please enter a Time group in the following format (HH:MM:SS) with leading zeroes:')
             go_time = datetime.timedelta(hours=int(time_string[0:2]), minutes=int(time_string[3:5]), seconds=int(time_string[6:8]))
             update_all_packages(go_time, optimized_packages)
+            #print out all packages
             print(f'Packages {package_string} for time {go_time}\n{get_header()}\n{optimized_packages.get(int(package_string))}')
+            #print out truck status
             tmp_string = get_all_trucks_status(optimized_trucks, go_time, optimized_packages, addresses)
             print(tmp_string)
         #if the first input doesn't match any of the designated inputs, raise and exception to close the program
