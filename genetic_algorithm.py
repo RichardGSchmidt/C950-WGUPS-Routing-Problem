@@ -199,7 +199,6 @@ def genetic_algorithm(trucks, packages, matrices, pop_size=50, generations=100, 
             best_solution = current_best[0]
             best_distance = current_best[2]
             # this print statement uses \r and an end="" to keep updating the text in place.
-            # in Python.
             print(f"\rGeneration {generation}: New best distance = {best_distance:.1f} miles (not including return leg).", end="")
         
         # Select parents based on fitness score for the population, reproductive success rate (which is really it's
@@ -222,7 +221,7 @@ def genetic_algorithm(trucks, packages, matrices, pop_size=50, generations=100, 
 
     return best_solution, best_distance
 
-# Function to simulate delivery with the optimized routes
+# Function to simulate delivery with the optimized routes.
 def simulate_delivery(solution, trucks, packages, matrices):
     hub_address = 0
     d_matrix, t_matrix = matrices
