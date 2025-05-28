@@ -31,7 +31,11 @@ def update_all_packages(query_time,package_hashmap):
     for ki in package_hashmap.keys():
         pack = package_hashmap.get(ki)
         pack.update(query_time)
-
+        if ki == 9:
+            if query_time >= datetime.timedelta(hours=10, minutes=20):
+                pack.address = 19
+            else:
+                pack.address = 12
 #function that returns a string to display truck status for a given route
 def get_truck_status(trucks, truck_index, query_time, package_hashmap, address_map):
     truck = trucks[truck_index]
