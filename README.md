@@ -77,7 +77,8 @@ F.  Justify the package delivery algorithm used in the solution as written in th
 >All requirements are met: All packages are delivered on time, packages that must be together are together, packages 
  restricted to a truck are on the specified truck, no package is picked up before it is available for pickup.  
  One vehicle returned to hub so that a driver is available before the third vehicle is deployed.  
- The day ends once all packages are delivered (notably this is not when all trucks return to the hub).
+ The day ends once all packages are delivered (notably this is not when all trucks return to the hub). The package with the wrong
+ address now has the wrong address until 10:20:00.
 
 3.  Identify two other named algorithms that are different from the algorithm implemented in the solution and would meet all requirements in the scenario.
 
