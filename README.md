@@ -1,8 +1,3 @@
-Name: Richard Schmidt, Student_ID: ID:010869529
-C950 Data Structures and Algorithms II
-NHP3 — NHP3 Task 2: WGUPS Routing Program Implementation
-
-
 A.  Develop a hash table, without using any additional libraries or classes, that has an insertion function that takes the package ID as input and inserts each of the following data components into the hash table:
 
 •   delivery address
